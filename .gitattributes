@@ -1,4 +1,10 @@
 # Exclude YARA files from language statistics
-yara_rules/* linguist-vendored
-*.yar linguist-vendored
-*.yara linguist-vendored 
+yara_rules/* linguist-vendored=true
+*.yar linguist-vendored=true
+*.yara linguist-vendored=true
+yara_rules/* linguist-generated=true
+*.yar linguist-generated=true
+*.yara linguist-generated=true
+yara_rules/* linguist-detectable=false
+*.yar linguist-detectable=false
+*.yara linguist-detectable=false 
