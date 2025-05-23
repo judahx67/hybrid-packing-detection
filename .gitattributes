@@ -1,0 +1,4 @@
+# Exclude YARA files from language statistics
+yara_rules/* linguist-vendored
+*.yar linguist-vendored
+*.yara linguist-vendored 
