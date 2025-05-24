@@ -2,7 +2,7 @@ rule RustPacker_Signature
 {
     meta:
         description = "Detects Windows binaries packed with RustPacker"
-        author = "Gaian"
+        author = "Huy"
         reference = "https://github.com/Nariod/RustPacker"
         version = "1.0"
 
@@ -22,7 +22,7 @@ rule RustPacker_Generic
 {
     meta:
         description = "Detects PE files packed with Rust-based packer (e.g., RustPacker)"
-        author = "ChatGPT"
+        author = "Huy2"
         reference = "https://github.com/Nariod/RustPacker"
         version = "1.0"
 
