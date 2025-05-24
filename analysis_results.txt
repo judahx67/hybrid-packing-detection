@@ -1,113 +1,18 @@
-File: packed\Alienyze\alienyze_7z.exe
-Actual Packer: Alienyze
-Detected Packer: None
-Result: 
-[+] Analyzing file: packed\Alienyze\alienyze_7z.exe
-
-[+] Section Analysis:
-Found 5 sections
-Section .text: entropy = 0.0
-Section .rdata: entropy = 0.0
-Section .data: entropy = 0.0
-Section .rsrc: entropy = 0.988
-Section .alien: entropy = 5.96
-
-[+] API Analysis:
-Total API score: 0
-
-[+] YARA Analysis:
-[CLEAN] No packer rules matched
-[INFO] Other matches: ImportTableIsBad, IsPE32, HasRichSignature, Microsoft_Visual_Cpp_v50v60_MFC, IsConsole
-
-[+] Final Analysis:
-
-[FINAL VERDICT]
-[PACKED] (Medium confidence)
-[MEDIUM] Some suspicious indicators found
-Score: 1
-Classification: true_positives_wrong_packer
---------------------------------------------------------------------------------
-File: not-packed\7z.exe
-Actual Packer: not-packed
-Detected Packer: None
-Result: 
-[+] Analyzing file: not-packed\7z.exe
-
-[+] Section Analysis:
-Found 4 sections
-Section .text: entropy = 6.271
-Section .rdata: entropy = 3.445
-Section .data: entropy = 3.265
-Section .rsrc: entropy = 0.988
-
-[+] API Analysis:
-Total API score: 0
-
-[+] YARA Analysis:
-[CLEAN] No packer rules matched
-[INFO] Other matches: Microsoft_Visual_Cpp_50, Microsoft_Visual_Cpp_v50v60_MFC_additional, IsConsole, Microsoft_Visual_Cpp_v50v60_MFC, Microsoft_Visual_Cpp, IsPE32, HasRichSignature, Microsoft_Visual_Cpp_v60
-
-[+] Final Analysis:
-
-[FINAL VERDICT]
-[NOT PACKED]
-[CLEAN] No suspicious indicators detected
-Score: 1
-Classification: true_negatives
---------------------------------------------------------------------------------
-File: packed\Alienyze\alienyze_accesschk.exe
-Actual Packer: Alienyze
-Detected Packer: None
-Result: 
-[+] Analyzing file: packed\Alienyze\alienyze_accesschk.exe
-
-[+] Section Analysis:
-Found 5 sections
-Section .text: entropy = 0.0
-Section .rdata: entropy = 0.0
-Section .data: entropy = 0.0
-Section .rsrc: entropy = 4.78
-Section .alien: entropy = 4.325
-
-[+] API Analysis:
-Total API score: 0
-
-[+] YARA Analysis:
-[CLEAN] No packer rules matched
-[INFO] Other matches: HasRichSignature, IsPE32, IsConsole, ImportTableIsBad, Microsoft_Visual_Cpp_v50v60_MFC
-
-[+] Final Analysis:
-
-[FINAL VERDICT]
-[PACKED] (Medium confidence)
-[MEDIUM] Some suspicious indicators found
-Score: 1
-Classification: true_positives_wrong_packer
---------------------------------------------------------------------------------
-
-Detailed Metrics:
-True Positives (Correct Packer): 0
-True Positives (Wrong Packer): 2
-False Positives: 0
-True Negatives: 1
-False Negatives: 0
 
 Packer Detection Statistics:
 
 Alienyze:
   Total files: 2
-  Correctly identified: 0
-  Detection rate: 0.00%
+  Correctly identified: 2
+  Detection rate: 100%
 
-Performance Metrics:
+Overall Performance:
 Accuracy: 100.00%
 Precision: 100.00%
 Recall: 100.00%
-F1 Score: 100.00%
+F1 Score: 1.00
 
 Summary:
-Total files analyzed: 3
-Total score: 3
-Average score: 1.00
-Total analysis time: 5.53 seconds
-Average time per file: 1.84 seconds
+Total files analyzed: 4
+Total analysis time: 7.16 seconds
+Average time per file: 1.79 seconds

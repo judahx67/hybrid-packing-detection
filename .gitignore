@@ -1,3 +1,7 @@
 /.venv
 /packed3.exe
 /windows_czkawka_cli.exe
+RustPacker.zip
+rustpack_detect_old.py
+rustpack_detect.py
+detect_packing.py

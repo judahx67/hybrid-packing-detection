@@ -10,17 +10,16 @@ def get_venv_python():
     venv_python = os.path.join(".venv", "Scripts", "python.exe")
     if os.path.exists(venv_python):
         return venv_python
-    return "python"  # fallback to system python if venv not found
+    return "python"  # fallback to sPATH 
 
 def log_debug(message, level="INFO"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] [{level}] {message}")
-
+# Get packer name 
 def get_packer_name(file_path):
-    # Extract packer name from path
     path_parts = file_path.split(os.sep)
     if len(path_parts) > 2 and path_parts[0] == "packed":
-        return path_parts[1]  # Return the packer name from subfolder
+        return path_parts[1] 
     return "not-packed"
 
 def run_analysis(file_path):
@@ -29,8 +28,7 @@ def run_analysis(file_path):
         start_time = time.time()
         
         venv_python = get_venv_python()
-        
-        # Run the analysis and capture output
+        # Run combined detector -> get output 
         process = subprocess.Popen([venv_python, 'combined_detector.py', file_path],
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
@@ -38,14 +36,13 @@ def run_analysis(file_path):
                                  bufsize=1,
                                  universal_newlines=True)
         
-        # Read output and filter for relevant messages
+        # Read output and filter 
         output_lines = []
         while True:
             output = process.stdout.readline()
             if output == '' and process.poll() is not None:
                 break
             if output:
-                # Only keep relevant messages
                 if any(x in output for x in ["[DETECTED]", "[FINAL VERDICT]", "[PACKED]", "[NOT PACKED]"]):
                     output_lines.append(output.strip())
         
@@ -58,7 +55,7 @@ def run_analysis(file_path):
                     output_lines.append(line.strip())
         
         analysis_time = time.time() - start_time
-        log_debug(f"Analysis completed in {analysis_time:.2f} seconds")
+        log_debug(f"Time taken: {analysis_time:.2f} seconds")
         
         if stderr:
             log_debug(f"Warning/Error output: {stderr}", "WARNING")
@@ -69,20 +66,14 @@ def run_analysis(file_path):
         return f"Error analyzing {file_path}: {str(e)}"
 
 def calculate_score(file_path, result):
-    # Get actual packer used
-    actual_packer = get_packer_name(file_path)
+    # packed ->has packer name. not-packed -> no packer name. 
+    path_parts = file_path.split(os.sep)
+    actual_packer = path_parts[1] if len(path_parts) > 2 and path_parts[0] == "packed" else "not-packed"
     
-    # Check if result indicates packing
+    # Check output
     is_detected_as_packed = "[PACKED]" in result
     
-    # Extract detected packer name if available
-    detected_packer = None
-    for line in result.split('\n'):
-        if "[DETECTED] Detected packer:" in line:
-            detected_packer = line.split(":")[1].strip()
-            break
-    
-    # Calculate score and determine classification
+    # Scoring
     if actual_packer == "not-packed":
         if not is_detected_as_packed:
             score = 1  # True negative
@@ -94,29 +85,22 @@ def calculate_score(file_path, result):
             log_debug(f"False positive: {file_path} (not packed but detected as packed)", "WARNING")
     else:  # File is packed
         if is_detected_as_packed:
-            if detected_packer and detected_packer.lower() == actual_packer.lower():
-                score = 2  # True positive with correct packer identification
-                classification = "true_positives_correct_packer"
-                log_debug(f"True positive with correct packer: {file_path} (detected as {detected_packer})")
-            else:
-                score = 1  # True positive but wrong packer
-                classification = "true_positives_wrong_packer"
-                log_debug(f"True positive but wrong packer: {file_path} (actual: {actual_packer}, detected: {detected_packer})")
+            score = 1  # True positive
+            classification = "true_positives"
+            log_debug(f"True positive: {file_path} (packed and detected as packed)")
         else:
             score = -1  # False negative
             classification = "false_negatives"
-            log_debug(f"False negative: {file_path} (packed with {actual_packer} but not detected)", "WARNING")
+            log_debug(f"False negative: {file_path} (packed but not detected)", "WARNING")
     
-    return score, classification, actual_packer, detected_packer
+    return score, classification, actual_packer
 
 def calculate_metrics(classifications, packer_stats):
-    # Calculate overall metrics
+    # Metricschesting 
     total = sum(classifications.values())
-    accuracy = (classifications["true_positives_correct_packer"] + 
-                classifications["true_positives_wrong_packer"] + 
-                classifications["true_negatives"]) / total if total > 0 else 0
+    accuracy = (classifications["true_positives"] + classifications["true_negatives"]) / total if total > 0 else 0
     
-    true_positives = classifications["true_positives_correct_packer"] + classifications["true_positives_wrong_packer"]
+    true_positives = classifications["true_positives"]
     false_positives = classifications["false_positives"]
     false_negatives = classifications["false_negatives"]
     
@@ -132,35 +116,33 @@ def calculate_metrics(classifications, packer_stats):
         "classifications": classifications,
         "packer_stats": packer_stats
     }
-
+# needs fixing 
 def save_results(results, classifications, packer_stats, total_score, total_files, start_time):
-    # Calculate metrics
+
     metrics = calculate_metrics(classifications, packer_stats)
     
     # Create concise results
     concise_results = []
     
     # Add packer statistics
-    concise_results.append("\nPacker Detection Statistics:")
+    concise_results.append("\nPacker Detection Statistics:\n")
     for packer, stats in metrics['packer_stats'].items():
         if packer != "not-packed":
-            concise_results.append(f"\n{packer}:")
+            concise_results.append(f"{packer}:")
             concise_results.append(f"  Total files: {stats['total']}")
             concise_results.append(f"  Correctly identified: {stats['correctly_identified']}")
-            concise_results.append(f"  Detection rate: {(stats['correctly_identified'] / stats['total'] * 100):.2f}%")
-            if stats['wrong_identifications']:
-                concise_results.append(f"  Wrongly identified as: {', '.join(stats['wrong_identifications'])}")
+            concise_results.append(f"  Detection rate: {(stats['correctly_identified'] / stats['total'] * 100):.0f}%\n")
     
-    # Add overall metrics
-    concise_results.append(f"\nOverall Performance:")
+    # Add overall 
+    concise_results.append("Overall Performance:")
     concise_results.append(f"Accuracy: {metrics['accuracy']:.2%}")
     concise_results.append(f"Precision: {metrics['precision']:.2%}")
     concise_results.append(f"Recall: {metrics['recall']:.2%}")
-    concise_results.append(f"F1 Score: {metrics['f1_score']:.2f}")
+    concise_results.append(f"F1 Score: {metrics['f1_score']:.2f}\n")
     
     # Add summary
     total_time = time.time() - start_time
-    concise_results.append(f"\nSummary:")
+    concise_results.append("Summary:")
     concise_results.append(f"Total files analyzed: {total_files}")
     concise_results.append(f"Total analysis time: {total_time:.2f} seconds")
     concise_results.append(f"Average time per file: {total_time/total_files:.2f} seconds")
@@ -175,30 +157,26 @@ def save_results(results, classifications, packer_stats, total_score, total_file
 def main():
     start_time = time.time()
     log_debug("Starting analysis process")
-    
-    # Initialize counters
+
     total_score = 0
     total_files = 0
     results = []
     
     # Initialize classification counters
     classifications = {
-        "true_positives_correct_packer": 0,
-        "true_positives_wrong_packer": 0,
+        "true_positives": 0,
         "false_positives": 0,
         "true_negatives": 0,
         "false_negatives": 0
     }
     
-    # Initialize packer statistics
     packer_stats = defaultdict(lambda: {
         "total": 0,
-        "correctly_identified": 0,
-        "wrong_identifications": set()
+        "correctly_identified": 0
     })
     
     try:
-        # Get all files to analyze
+        # To alternate between packed and not-packed
         packed_patterns = glob.glob("packed/**/*.exe", recursive=True)
         not_packed_patterns = glob.glob("not-packed/*.exe")
         
@@ -207,36 +185,31 @@ def main():
         # Process files alternately
         max_files = max(len(packed_patterns), len(not_packed_patterns))
         for i in range(max_files):
-            # Process packed file if available
             if i < len(packed_patterns):
                 file_path = packed_patterns[i]
                 log_debug(f"Processing packed file {i+1}/{len(packed_patterns)}: {file_path}")
                 result = run_analysis(file_path)
-                score, classification, actual_packer, detected_packer = calculate_score(file_path, result)
+                score, classification, actual_packer = calculate_score(file_path, result)
                 total_score += score
                 total_files += 1
                 classifications[classification] += 1
-                
-                # Update packer statistics
+               
                 packer_stats[actual_packer]["total"] += 1
-                if classification == "true_positives_correct_packer":
+                if classification == "true_positives":  # Correctly identified as packed
                     packer_stats[actual_packer]["correctly_identified"] += 1
-                elif classification == "true_positives_wrong_packer" and detected_packer:
-                    packer_stats[actual_packer]["wrong_identifications"].add(detected_packer)
             
-            # Process not-packed file if available
+         
             if i < len(not_packed_patterns):
                 file_path = not_packed_patterns[i]
                 log_debug(f"Processing not-packed file {i+1}/{len(not_packed_patterns)}: {file_path}")
                 result = run_analysis(file_path)
-                score, classification, actual_packer, detected_packer = calculate_score(file_path, result)
+                score, classification, actual_packer = calculate_score(file_path, result)
                 total_score += score
                 total_files += 1
                 classifications[classification] += 1
                 
-                # Update packer statistics
                 packer_stats[actual_packer]["total"] += 1
-                if classification == "true_negatives":
+                if classification == "true_negatives":  # Correctly identified as not packed
                     packer_stats[actual_packer]["correctly_identified"] += 1
         
         # Save final results
