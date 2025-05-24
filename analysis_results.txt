@@ -2,17 +2,142 @@
 Packer Detection Statistics:
 
 Alienyze:
-  Total files: 7
-  Correctly identified: 7
+  Total files: 126
+  Correctly identified: 126
+  Detection rate: 100%
+
+Amber:
+  Total files: 152
+  Correctly identified: 152
+  Detection rate: 100%
+
+ASPack:
+  Total files: 118
+  Correctly identified: 118
+  Detection rate: 100%
+
+BeRoEXEPacker:
+  Total files: 116
+  Correctly identified: 116
+  Detection rate: 100%
+
+Enigma Virtual Box:
+  Total files: 123
+  Correctly identified: 123
+  Detection rate: 100%
+
+Eronana Packer:
+  Total files: 151
+  Correctly identified: 151
+  Detection rate: 100%
+
+Exe32pack:
+  Total files: 128
+  Correctly identified: 128
+  Detection rate: 100%
+
+EXpressor:
+  Total files: 120
+  Correctly identified: 120
+  Detection rate: 100%
+
+FSG:
+  Total files: 119
+  Correctly identified: 117
+  Detection rate: 98%
+
+JDPack:
+  Total files: 120
+  Correctly identified: 120
+  Detection rate: 100%
+
+MEW:
+  Total files: 116
+  Correctly identified: 0
+  Detection rate: 0%
+
+Molebox:
+  Total files: 119
+  Correctly identified: 119
+  Detection rate: 100%
+
+MPRESS:
+  Total files: 116
+  Correctly identified: 116
+  Detection rate: 100%
+
+Neolite:
+  Total files: 116
+  Correctly identified: 116
+  Detection rate: 100%
+
+NSPack:
+  Total files: 119
+  Correctly identified: 119
+  Detection rate: 100%
+
+Packman:
+  Total files: 115
+  Correctly identified: 115
+  Detection rate: 100%
+
+PECompact:
+  Total files: 124
+  Correctly identified: 123
+  Detection rate: 99%
+
+PEtite:
+  Total files: 147
+  Correctly identified: 147
+  Detection rate: 100%
+
+RLPack:
+  Total files: 115
+  Correctly identified: 115
+  Detection rate: 100%
+
+RustPacker:
+  Total files: 19
+  Correctly identified: 19
+  Detection rate: 100%
+
+TELock:
+  Total files: 120
+  Correctly identified: 120
+  Detection rate: 100%
+
+Themida:
+  Total files: 123
+  Correctly identified: 123
+  Detection rate: 100%
+
+UPX:
+  Total files: 123
+  Correctly identified: 123
+  Detection rate: 100%
+
+WinUpack:
+  Total files: 120
+  Correctly identified: 59
+  Detection rate: 49%
+
+Yoda-Crypter:
+  Total files: 118
+  Correctly identified: 118
+  Detection rate: 100%
+
+Yoda-Protector:
+  Total files: 115
+  Correctly identified: 115
   Detection rate: 100%
 
 Overall Performance:
-Accuracy: 100.00%
-Precision: 100.00%
-Recall: 100.00%
-F1 Score: 1.00
+Accuracy: 94.62%
+Precision: 99.66%
+Recall: 94.19%
+F1 Score: 0.97
 
 Summary:
-Total files analyzed: 13
-Total analysis time: 23.72 seconds
-Average time per file: 1.82 seconds
+Total files analyzed: 3530
+Total analysis time: 4934.77 seconds
+Average time per file: 1.40 seconds

@@ -1,6 +1,11 @@
 # PE Packing Detection Tool
 
-Python script to detect packed Windows PE files using API calls analysis, section names matching, entropy analysis and yara rulematching. 
+Python script to detect packed Windows PE files using: 
+    - Section entropy analysis
+    - Suspicious API detection
+    - YARA rule matching
+    - Packer signature detection
+    - Section name analysis
 
 ## Requirements
 
@@ -27,7 +32,6 @@ This project partially  implements YARA for pattern matching and malware detecti
 
 ### RustPacker
 https://github.com/Nariod/RustPacker 
-
 
 ### PyPackerDetect -> sections.json
 https://github.com/cylance/PyPackerDetect
