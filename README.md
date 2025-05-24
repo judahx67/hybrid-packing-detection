@@ -29,3 +29,5 @@ This project partially  implements YARA for pattern matching and malware detecti
 https://github.com/Nariod/RustPacker 
 
 
+### PyPackerDetect -> sections.json
+https://github.com/cylance/PyPackerDetect
