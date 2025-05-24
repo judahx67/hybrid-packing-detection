@@ -173,17 +173,17 @@ def analyze_file(file_path, rules, known_sections, packer_map):
         # # Determine packing status
         # is_packed = False
         # confidence = "Low"
-        
+        # 2 entropy >>>> 
         elif packer_related:
             is_packed = True
             confidence = "High"
-        elif high_entropy_count >= 1 and suspicious_sections:
+        elif high_entropy_count >= 2 and suspicious_sections:
             is_packed = True
             confidence = "High"
         elif api_score >= 5:
             is_packed = True
             confidence = "High"
-        elif high_entropy_count >= 1 or suspicious_sections or api_score >= 3:
+        elif high_entropy_count >= 2 or suspicious_sections or api_score >= 3:
             is_packed = True
             confidence = "Medium"
         
