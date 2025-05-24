@@ -91,6 +91,7 @@
         ".WWPACK": "WWPACK Packer",
         ".WWP32": "WWPACK Packer (WWPack32)",
         ".yP": "Y0da Protector",
-        ".y0da": "Y0da Protector"
+        ".y0da": "Y0da Protector",
+        ".alien": "Alienyez Packer"
     }
 }

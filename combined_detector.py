@@ -12,7 +12,7 @@ def log_debug(message, level="INFO"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] [{level}] {message}")
 
-# Load databases
+# Load db
 def load_databases():
     with open("./db/sections.json", "r", encoding="utf-8") as f:
         known_sections = json.load(f)["sections"]["known"]
@@ -37,12 +37,22 @@ def calculate_entropy(data):
     return round(entropy, 3)
 
 # Detect packer by section names
+# def detect_packer_name(section_names, packer_map):
+#     for name in section_names:
+#         for key, value in packer_map.items():
+#             if key.lower() in name.lower():
+#                 return value
+#     return None
+
+
 def detect_packer_name(section_names, packer_map):
+    matches = []
     for name in section_names:
         for key, value in packer_map.items():
             if key.lower() in name.lower():
-                return value
-    return None
+                matches.append(value)
+    return list(set(matches)) if matches else None
+
 
 # Get section hashes for additional analysis
 def get_section_hashes(binary):
@@ -157,12 +167,14 @@ def analyze_file(file_path, rules, known_sections, packer_map):
         packer_name = detect_packer_name(section_names, packer_map)
         if packer_name:
             print(f"    [DETECTED] Detected packer: {packer_name}")
+            is_packed = True 
+            confidence = "High"
         
-        # Determine packing status
-        is_packed = False
-        confidence = "Low"
+        # # Determine packing status
+        # is_packed = False
+        # confidence = "Low"
         
-        if packer_related:
+        elif packer_related:
             is_packed = True
             confidence = "High"
         elif high_entropy_count >= 1 and suspicious_sections:

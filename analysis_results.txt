@@ -2,8 +2,8 @@
 Packer Detection Statistics:
 
 Alienyze:
-  Total files: 2
-  Correctly identified: 2
+  Total files: 7
+  Correctly identified: 7
   Detection rate: 100%
 
 Overall Performance:
@@ -13,6 +13,6 @@ Recall: 100.00%
 F1 Score: 1.00
 
 Summary:
-Total files analyzed: 4
-Total analysis time: 7.16 seconds
-Average time per file: 1.79 seconds
+Total files analyzed: 13
+Total analysis time: 23.72 seconds
+Average time per file: 1.82 seconds

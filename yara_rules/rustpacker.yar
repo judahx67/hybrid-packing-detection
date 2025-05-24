@@ -47,3 +47,16 @@ rule RustPacker_Generic
 
 
 
+rule AlienYez_Packer
+{
+    meta:
+        author = "Huy"
+        description = "Detects AlienYez by .alien section"
+        date = "2025-05-24"
+        version = "1.0"
+
+    condition:
+        uint16(0) == 0x5A4D and
+        for any i in (0..pe.number_of_sections - 1):
+            pe.sections[i].name matches "^\\.alien"
+}
