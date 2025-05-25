@@ -54,7 +54,7 @@ def detect_packer_name(section_names, packer_map):
     return list(set(matches)) if matches else None
 
 
-# Get section hashes for additional analysis
+# Get hash to compare yara
 def get_section_hashes(binary):
     hashes = {}
     for section in binary.sections:
@@ -62,25 +62,18 @@ def get_section_hashes(binary):
             hashes[section.name] = hashlib.sha256(bytes(section.content)).hexdigest()
     return hashes
 
-# Score-based detection using suspicious APIs
+# Anomaly score for API calls
 def score_based_detection(binary):
     suspicious_apis = {
-        # Memory allocation and protection
-        "VirtualAlloc": 3,  # Base score, will check for PAGE_EXECUTE_READWRITE
-        "VirtualProtect": 4,  # Base score, will check for RWX changes
+        "VirtualAlloc": 3,
+        "VirtualProtect": 4,
         "VirtualAllocEx": 3,
         "WriteProcessMemory": 5,
-        
-        # Process manipulation
         "CreateRemoteThread": 7,
         "NtCreateThreadEx": 7,
         "ZwUnmapViewOfSection": 6,
-        
-        # Dynamic loading
         "LoadLibrary": 2,
         "GetProcAddress": 2,
-        
-        # Additional suspicious APIs
         "NtAllocateVirtualMemory": 3,
         "AddVectoredExceptionHandler": 2,
         "SetWindowsHookEx": 2,
@@ -96,7 +89,7 @@ def score_based_detection(binary):
     detected_apis = []
     sequence_detected = False
 
-    # Check for classic unpacking sequence
+    # Check unpacking sequence
     if all(api in imports for api in ["VirtualAlloc", "WriteProcessMemory", "CreateThread"]):
         score += 10  # Reduced from 15
         detected_apis.append("Classic unpacking sequence detected (+10)")
@@ -137,6 +130,10 @@ def yara_scan_file(file_path, rules):
 def analyze_file(file_path, rules, known_sections, packer_map):
     try:
         print(f"\n[+] Analyzing file: {file_path}")
+        
+        # Initialize variables
+        is_packed = False
+        confidence = "Low"
         
         # Load PE file
         pe = pefile.PE(file_path)
@@ -224,9 +221,12 @@ def analyze_file(file_path, rules, known_sections, packer_map):
         elif api_score >= 10:
             is_packed = True
             confidence = "High"
-        elif high_entropy_count >= 2 or suspicious_sections or api_score >= 7:
-            is_packed = False
+        elif sum([high_entropy_count >= 2, bool(suspicious_sections), api_score >= 7]) >= 2:
+            is_packed = True
             confidence = "Medium"
+        elif suspicious_sections or high_entropy_count >= 2 or api_score > 7:
+            is_packed = True
+            confidence = "LOW"
         
         # Print final verdict
         print("\n[FINAL VERDICT]")

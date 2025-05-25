@@ -36,23 +36,25 @@ def run_analysis(file_path):
                                  bufsize=1,
                                  universal_newlines=True)
         
-        # Read output and filter 
+        # # Read all output 
         output_lines = []
-        while True:
-            output = process.stdout.readline()
-            if output == '' and process.poll() is not None:
-                break
-            if output:
-                if any(x in output for x in ["[DETECTED]", "[FINAL VERDICT]", "[PACKED]", "[NOT PACKED]"]):
-                    output_lines.append(output.strip())
+        # while True:
+        #     output = process.stdout.readline()
+        #     if output == '' and process.poll() is not None:
+        #         break
+        #     if output:
+        #         output_lines.append(output.strip())
+        #         print(output.strip())  # Print output in real-time
         
         # Get any remaining output
         remaining_output, stderr = process.communicate()
         if remaining_output:
-            # Filter remaining output
             for line in remaining_output.split('\n'):
-                if any(x in line for x in ["[DETECTED]", "[FINAL VERDICT]", "[PACKED]", "[NOT PACKED]"]):
+                if line.strip():
                     output_lines.append(line.strip())
+ #                   print(line.strip())  # Print remaining output
+
+
         
         analysis_time = time.time() - start_time
         log_debug(f"Time taken: {analysis_time:.2f} seconds")
@@ -96,7 +98,7 @@ def calculate_score(file_path, result):
     return score, classification, actual_packer
 
 def calculate_metrics(classifications, packer_stats):
-    # Metricschesting 
+    # Calculate basic detection metrics
     total = sum(classifications.values())
     accuracy = (classifications["true_positives"] + classifications["true_negatives"]) / total if total > 0 else 0
     
@@ -104,21 +106,21 @@ def calculate_metrics(classifications, packer_stats):
     false_positives = classifications["false_positives"]
     false_negatives = classifications["false_negatives"]
     
-    precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
-    recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
-    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    # Detection rate (true positives / total packed files)
+    detection_rate = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
+    
+    # False positive rate
+    false_positive_rate = false_positives / (false_positives + classifications["true_negatives"]) if (false_positives + classifications["true_negatives"]) > 0 else 0
     
     return {
         "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
-        "f1_score": f1_score,
+        "detection_rate": detection_rate,
+        "false_positive_rate": false_positive_rate,
         "classifications": classifications,
         "packer_stats": packer_stats
     }
-# needs fixing 
-def save_results(results, classifications, packer_stats, total_score, total_files, start_time):
 
+def save_results(results, classifications, packer_stats, total_score, total_files, start_time):
     metrics = calculate_metrics(classifications, packer_stats)
     
     # Create concise results
@@ -133,12 +135,11 @@ def save_results(results, classifications, packer_stats, total_score, total_file
             concise_results.append(f"  Correctly identified: {stats['correctly_identified']}")
             concise_results.append(f"  Detection rate: {(stats['correctly_identified'] / stats['total'] * 100):.0f}%\n")
     
-    # Add overall 
+    # Add overall metrics
     concise_results.append("Overall Performance:")
     concise_results.append(f"Accuracy: {metrics['accuracy']:.2%}")
-    concise_results.append(f"Precision: {metrics['precision']:.2%}")
-    concise_results.append(f"Recall: {metrics['recall']:.2%}")
-    concise_results.append(f"F1 Score: {metrics['f1_score']:.2f}\n")
+    concise_results.append(f"Detection Rate: {metrics['detection_rate']:.2%}")
+    concise_results.append(f"False Positive Rate: {metrics['false_positive_rate']:.2%}\n")
     
     # Add summary
     total_time = time.time() - start_time
