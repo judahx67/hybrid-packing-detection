@@ -10,7 +10,7 @@ def get_venv_python():
     venv_python = os.path.join(".venv", "Scripts", "python.exe")
     if os.path.exists(venv_python):
         return venv_python
-    return "python"  # fallback to sPATH 
+    return "python"  
 
 def log_debug(message, level="INFO"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -78,20 +78,20 @@ def calculate_score(file_path, result):
     # Scoring
     if actual_packer == "not-packed":
         if not is_detected_as_packed:
-            score = 1  # True negative
+            score = 1  
             classification = "true_negatives"
             log_debug(f"True negative: {file_path} (not packed and detected as not packed)")
         else:
-            score = -1  # False positive
+            score = -1  
             classification = "false_positives"
             log_debug(f"False positive: {file_path} (not packed but detected as packed)", "WARNING")
     else:  # File is packed
         if is_detected_as_packed:
-            score = 1  # True positive
+            score = 1  
             classification = "true_positives"
             log_debug(f"True positive: {file_path} (packed and detected as packed)")
         else:
-            score = -1  # False negative
+            score = -1  
             classification = "false_negatives"
             log_debug(f"False negative: {file_path} (packed but not detected)", "WARNING")
     
@@ -163,7 +163,7 @@ def main():
     total_files = 0
     results = []
     
-    # Initialize classification counters
+    # Initialize counters
     classifications = {
         "true_positives": 0,
         "false_positives": 0,
@@ -177,11 +177,17 @@ def main():
     })
     
     try:
-        # To alternate between packed and not-packed
         packed_patterns = glob.glob("packed/**/*.exe", recursive=True)
         not_packed_patterns = glob.glob("not-packed/*.exe")
         
-        log_debug(f"Found {len(packed_patterns)} packed files and {len(not_packed_patterns)} not-packed files to analyze")
+        # Prioritize MEW folder
+        mew_patterns = [p for p in packed_patterns if "MEW" in p]
+        other_packed_patterns = [p for p in packed_patterns if "MEW" not in p]
+        
+        # Combine patterns with MEW first
+        packed_patterns = mew_patterns + other_packed_patterns
+        
+        log_debug(f"Found {len(mew_patterns)} MEW files, {len(other_packed_patterns)} other packed files, and {len(not_packed_patterns)} not-packed files to analyze")
         
         # Process files alternately
         max_files = max(len(packed_patterns), len(not_packed_patterns))
@@ -199,7 +205,6 @@ def main():
                 if classification == "true_positives":  # Correctly identified as packed
                     packer_stats[actual_packer]["correctly_identified"] += 1
             
-         
             if i < len(not_packed_patterns):
                 file_path = not_packed_patterns[i]
                 log_debug(f"Processing not-packed file {i+1}/{len(not_packed_patterns)}: {file_path}")
