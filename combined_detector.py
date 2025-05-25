@@ -65,9 +65,26 @@ def get_section_hashes(binary):
 # Score-based detection using suspicious APIs
 def score_based_detection(binary):
     suspicious_apis = {
-        "VirtualAlloc": 1, "VirtualAllocEx": 1, "WriteProcessMemory": 2,
-        "CreateRemoteThread": 2, "NtCreateThreadEx": 3,
-        "NtAllocateVirtualMemory": 2, "AddVectoredExceptionHandler": 1
+        # Memory allocation and protection
+        "VirtualAlloc": 3,  # Base score, will check for PAGE_EXECUTE_READWRITE
+        "VirtualProtect": 4,  # Base score, will check for RWX changes
+        "VirtualAllocEx": 3,
+        "WriteProcessMemory": 5,
+        
+        # Process manipulation
+        "CreateRemoteThread": 7,
+        "NtCreateThreadEx": 7,
+        "ZwUnmapViewOfSection": 6,
+        
+        # Dynamic loading
+        "LoadLibrary": 2,
+        "GetProcAddress": 2,
+        
+        # Additional suspicious APIs
+        "NtAllocateVirtualMemory": 3,
+        "AddVectoredExceptionHandler": 2,
+        "SetWindowsHookEx": 2,
+        "QueueUserAPC": 3
     }
 
     imports = set()
@@ -77,10 +94,25 @@ def score_based_detection(binary):
 
     score = 0
     detected_apis = []
+    sequence_detected = False
+
+    # Check for classic unpacking sequence
+    if all(api in imports for api in ["VirtualAlloc", "WriteProcessMemory", "CreateThread"]):
+        score += 10  # Reduced from 15
+        detected_apis.append("Classic unpacking sequence detected (+10)")
+        sequence_detected = True
+
+    # Check for individual APIs
     for api, api_score in suspicious_apis.items():
         if api in imports:
             detected_apis.append(f"{api} (+{api_score})")
             score += api_score
+
+    # Check for high frequency of suspicious calls
+    suspicious_count = len([api for api in imports if api in suspicious_apis])
+    if suspicious_count >= 6:  # Increased threshold from 5 to 6
+        score += 7  # Reduced from 10
+        detected_apis.append(f"High frequency of suspicious calls detected (+7)")
 
     return score, detected_apis
 
@@ -134,6 +166,15 @@ def analyze_file(file_path, rules, known_sections, packer_map):
             if name not in known_sections:
                 suspicious_sections.append(name)
             print(line)
+        
+        # Calculate total file entropy
+        total_data = bytearray()
+        for section in pe.sections:
+            total_data.extend(section.get_data())
+        total_entropy = calculate_entropy(total_data)
+        print(f"\n    Total file entropy: {total_entropy}")
+        if total_entropy > suspicious_entropy:
+            print("    [WARNING] High total file entropy detected")
 
         # API Analysis
         print("\n[+] API Analysis:")
@@ -180,11 +221,11 @@ def analyze_file(file_path, rules, known_sections, packer_map):
         elif high_entropy_count >= 2 and suspicious_sections:
             is_packed = True
             confidence = "High"
-        elif api_score >= 5:
+        elif api_score >= 10:
             is_packed = True
             confidence = "High"
-        elif high_entropy_count >= 2 or suspicious_sections or api_score >= 3:
-            is_packed = True
+        elif high_entropy_count >= 2 or suspicious_sections or api_score >= 7:
+            is_packed = False
             confidence = "Medium"
         
         # Print final verdict
@@ -197,7 +238,11 @@ def analyze_file(file_path, rules, known_sections, packer_map):
                 print("    [MEDIUM] Some suspicious indicators found")
         else:
             print("    [NOT PACKED]")
-            print("    [CLEAN] No suspicious indicators detected")
+            if confidence == "Medium":
+                print("    [MEDIUM] Some suspicious indicators found")
+            else:
+                print("    [CLEAN] No suspicious indicators detected")
+
 
     except Exception as e:
         print(f"[!] Error processing {file_path}: {e}")
