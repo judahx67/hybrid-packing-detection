@@ -14,6 +14,7 @@ Python script to detect packed Windows PE files using:
 - yara-python
 - lief
 - argparse
+(or can use .venv) 
 Dataset taken from: https://github.com/packing-box/dataset-packed-pe
 - `packed/` - Directory containing packed samples
 - `not-packed/` - Directory containing non-packed samples
@@ -22,7 +23,7 @@ Dataset taken from: https://github.com/packing-box/dataset-packed-pe
 
 
 ```bash
-python analyze_files.py
+python combined_detector.py malware.exe
 ```
 
 ## Credits
