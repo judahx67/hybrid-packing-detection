@@ -54,14 +54,6 @@ def detect_packer_name(section_names, packer_map):
     return list(set(matches)) if matches else None
 
 
-# Get hash to compare yara
-def get_section_hashes(binary):
-    hashes = {}
-    for section in binary.sections:
-        if section.size > 0:
-            hashes[section.name] = hashlib.sha256(bytes(section.content)).hexdigest()
-    return hashes
-
 # Anomaly score for API calls
 def score_based_detection(binary):
     suspicious_apis = {
@@ -101,7 +93,7 @@ def score_based_detection(binary):
             detected_apis.append(f"{api} (+{api_score})")
             score += api_score
 
-    # Check for high frequency of suspicious calls
+    # Check for frequency calls
     suspicious_count = len([api for api in imports if api in suspicious_apis])
     if suspicious_count >= 6:  # Increased threshold from 5 to 6
         score += 7  # Reduced from 10
@@ -129,23 +121,23 @@ def yara_scan_file(file_path, rules):
 
 def analyze_file(file_path, rules, known_sections, packer_map):
     try:
-        print(f"\n[+] Analyzing file: {file_path}")
+        log_debug(f"Analyzing file: {file_path}")
         
         # Initialize variables
         is_packed = False
         confidence = "Low"
         
-        # Load PE file
+        # Load PE
         pe = pefile.PE(file_path)
         binary = lief.parse(file_path)
         
         if binary is None:
-            print("[!] Failed to parse binary with LIEF")
+            log_debug("Failed to parse binary with LIEF", "ERROR")
             return
         
-        # Section Analysis
-        print(f"\n[+] Section Analysis:")
-        print(f"    Found {len(pe.sections)} sections")
+        # Section
+        log_debug("Section Analysis", "INFO")
+        log_debug(f"Found {len(pe.sections)} sections")
         
         suspicious_entropy = 7.0
         high_entropy_count = 0
@@ -156,62 +148,55 @@ def analyze_file(file_path, rules, known_sections, packer_map):
             name = section.Name.decode(errors='ignore').strip('\x00')
             section_names.append(name)
             entropy = calculate_entropy(section.get_data())
-            line = f"    Section {name}: entropy = {entropy}"
             if entropy > suspicious_entropy:
-                line += " -> high entropy"
                 high_entropy_count += 1
+                log_debug(f"Section {name}: entropy = {entropy} (HIGH)", "WARNING")
+            else:
+                log_debug(f"Section {name}: entropy = {entropy}")
             if name not in known_sections:
                 suspicious_sections.append(name)
-            print(line)
         
         # Calculate total file entropy
         total_data = bytearray()
         for section in pe.sections:
             total_data.extend(section.get_data())
         total_entropy = calculate_entropy(total_data)
-        print(f"\n    Total file entropy: {total_entropy}")
+        log_debug(f"Total file entropy: {total_entropy}")
         if total_entropy > suspicious_entropy:
-            print("    [WARNING] High total file entropy detected")
+            log_debug("High total file entropy detected", "WARNING")
 
         # API Analysis
-        print("\n[+] API Analysis:")
+        log_debug("API Analysis", "INFO")
         api_score, detected_apis = score_based_detection(binary)
         if detected_apis:
-            print("    Detected suspicious APIs:")
+            log_debug("Detected suspicious APIs:", "WARNING")
             for api in detected_apis:
-                print(f"        {api}")
-        print(f"    Total API score: {api_score}")
+                log_debug(f"    {api}", "WARNING")
+        log_debug(f"Total API score: {api_score}")
 
         # YARA Analysis
-        print("\n[+] YARA Analysis:")
+        log_debug("YARA Analysis", "INFO")
         yara_hits = yara_scan_file(file_path, rules)
         packer_related = [r for r in yara_hits if any(x in r.lower() for x in [
             "packer", "packed", "upx", "aspack", "mpress"
         ])]
 
         if packer_related:
-            print(f"    [DETECTED] Matched packer rule(s): {', '.join(packer_related)}")
+            log_debug(f"Matched packer rule(s): {', '.join(packer_related)}", "WARNING")
         else:
-            print("    [CLEAN] No packer rules matched")
+            log_debug("No packer rules matched")
 
         other_info = set(yara_hits) - set(packer_related)
         if other_info:
-            print(f"    [INFO] Other matches: {', '.join(other_info)}")
+            log_debug(f"Other matches: {', '.join(other_info)}")
 
-        # Final Analysis
-        print("\n[+] Final Analysis:")
-        
         # Check for known packer signatures
         packer_name = detect_packer_name(section_names, packer_map)
         if packer_name:
-            print(f"    [DETECTED] Detected packer: {packer_name}")
+            log_debug(f"Detected packer: {packer_name}", "WARNING")
             is_packed = True 
             confidence = "High"
         
-        # # Determine packing status
-        # is_packed = False
-        # confidence = "Low"
-        # 2 entropy >>>> 
         elif packer_related:
             is_packed = True
             confidence = "High"
@@ -229,23 +214,22 @@ def analyze_file(file_path, rules, known_sections, packer_map):
             confidence = "LOW"
         
         # Print final verdict
-        print("\n[FINAL VERDICT]")
+        log_debug("Final Verdict", "INFO")
         if is_packed:
-            print(f"    [PACKED] ({confidence} confidence)")
+            log_debug(f"PACKED ({confidence} confidence)", "WARNING")
             if confidence == "High":
-                print("    [HIGH] Multiple indicators detected")
+                log_debug("Multiple indicators detected", "WARNING")
             elif confidence == "Medium":
-                print("    [MEDIUM] Some suspicious indicators found")
+                log_debug("Some suspicious indicators found", "WARNING")
         else:
-            print("    [NOT PACKED]")
+            log_debug("NOT PACKED")
             if confidence == "Medium":
-                print("    [MEDIUM] Some suspicious indicators found")
+                log_debug("Some suspicious indicators found", "WARNING")
             else:
-                print("    [CLEAN] No suspicious indicators detected")
-
+                log_debug("No suspicious indicators detected")
 
     except Exception as e:
-        print(f"[!] Error processing {file_path}: {e}")
+        log_debug(f"Error processing {file_path}: {e}", "ERROR")
 
 def main():
     parser = argparse.ArgumentParser(description="Combined PE Packing Detector")
